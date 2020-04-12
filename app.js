@@ -3,11 +3,13 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const ejs = require('ejs');
 const mongoose = require('mongoose');
-const encrypt = require('mongoose-encryption');
+const md5 = require('md5');
+const bcrypt = require('bcrypt');
+
 
 
 const app = express();
-
+const saltRounds = 10;
 app.use(express.static("public"));
 app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({
@@ -24,7 +26,6 @@ const userSchema = new mongoose.Schema({
 
 
 
-userSchema.plugin(encrypt, {secret: process.env.SECRET, encryptedFields: ['password']});
 
 const User = new mongoose.model("User", userSchema);
 
@@ -39,7 +40,7 @@ app.route('/login')
         })
         .post(   (req, res) => {
 
-            const username = req.body.username;
+            const username =req.body.username;
             const password = req.body.password;
 
             User.findOne ({ 
@@ -48,15 +49,24 @@ app.route('/login')
              (err, foundUser) => {
                 if(err){
                     console.log(err)
+                    res.redirect('login')
                     
                 }   else    {
-                    if(foundUser.password === password){
-                        res.render("secrets")
-                    }   else {
-                        res.render('login')
-                    }
+
+                    bcrypt.compare(password,foundUser.password, function(err, result) {
+                        // result == true
+                        if(result){
+                            res.render("secrets")
+                        }   else {
+                            res.render('login')
+                        }
+
+                    });
+
+                    
                 }
-            })
+            }
+            )
         }  
     )
 
@@ -67,20 +77,29 @@ app.route('/register')
             res.render('register')
         })
         .post(  (req, res) => {
-            const newUser = User(
-                {
-                    email: req.body.username,
-                    password: req.body.password,
-                }
-            )
 
-            newUser.save(   (err)=> {
-                if(err){
-                    console.log(err);
-                }   else {
-                    res.render('secrets')
-                }
-            } )
+            bcrypt.hash(req.body.password, saltRounds, function(err, hash) {
+                // Store hash in your password DB.
+
+                const newUser = User(
+                    {
+                        email: req.body.username,
+                        password: hash,
+                    }
+                )
+    
+                newUser.save(   (err)=> {
+                    if(err){
+                        console.log(err);
+                    }   else {
+                        res.render('secrets')
+                    }
+                } )
+
+
+            });
+
+           
         }
         );
 
