@@ -8,7 +8,7 @@ const session = require('express-session');
 const passport = require('passport');
 const passportLocalMongoose = require('passport-local-mongoose');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
-const findOrCreate = require('mongoose-findorcreate')
+const findOrCreate = require('mongoose-findorcreate');
 
 const app = express();
 
@@ -37,6 +37,7 @@ const userSchema = new mongoose.Schema({
     username: String,
     password: String,
     googleId: String,
+    secret: String,
 });
 userSchema.plugin(passportLocalMongoose);
 userSchema.plugin(findOrCreate);
@@ -65,7 +66,6 @@ passport.use(new GoogleStrategy({
     userProfileURL: "https://www.googleapis.com/oauth2/v3/userinfo",
   },
     function(accessToken, refreshToken, profile, cb) {
-        console.log(profile);
     User.findOrCreate({ googleId: profile.id }, function (err, user) {
       return cb(err, user);
       
@@ -113,12 +113,25 @@ app.route('/logout')
 app.route('/secrets')
         .get(    (req, res) => {
             if(req.isAuthenticated()){
-                res.render('secrets');
-            }   else    {
-                
-                res.redirect('/login');
+                User.find({"secret" : {$ne: null} }  , function(err, foundUsers){
+                    if(err){
+                        console.log(err);
+                    }   else   {
+                        if(foundUsers){
+                            res.render("secrets" ,{usersWithSecrets: foundUsers});
+                            console.log(foundUsers);
+                        }
+                    }
+                }
+                )}
             }
-        } )
+                )
+                
+            // }   else    { 
+            //     res.redirect('/login');
+            // }
+        
+    
 
 
 // app.route('/auth/google')
@@ -158,12 +171,39 @@ app.route('/register')
             )
         }  )
 
+
         
 
 app.route('/submit')
         .get(  (req, res) =>{
-            res.render('submit')
-        });
+            if(req.isAuthenticated()){
+                res.render('submit');
+            }   else    {
+                res.redirect('/login');
+            }
+            
+        })
+
+        .post(   (req, res) => {
+
+            const submittedSecret = req.body.secret;
+
+            User.findById(req.user.id, (err, foundUser) => {
+                if(err){
+                    console.log(err);
+                    
+                }   else    {
+                    if(foundUser){
+                        foundUser.secret = submittedSecret;
+                        foundUser.save(   () => {
+                            res.redirect("/secrets");
+                        }  );
+                            
+                    }
+                }
+            } )
+            
+         } )
 
 
 app.listen(3000, () => console.log("Server started at port 3000"));
