@@ -5,7 +5,7 @@
   "main": "app.js",
   "dependencies": {
     "alert-node": "^3.0.10",
-    "bcrypt": "^4.0.1",
+    "bcrypt": "^5.0.0",
     "body-parser": "^1.19.0",
     "dotenv": "^8.2.0",
     "ejs": "^3.0.2",
