@@ -4,7 +4,7 @@
 
 Secret is developed using **NodeJS**, **MongoDB**, **Express** and **EJS**
 
-[Secret](https://github.com/debajitdeb11/share-secret/docs/secret.png)
+![Secret](https://github.com/debajitdeb11/share-secret/blob/master/docs/secret.png)
 
 ## Develop
 
